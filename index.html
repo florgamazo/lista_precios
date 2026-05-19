@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista de Precios Mayorista</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;900&family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --surface2: #1e2230;
+    --border: #2a2f3e;
+    --accent: #e8c14a;
+    --accent2: #f0d070;
+    --text: #e8eaf0;
+    --text2: #8890a8;
+    --text3: #555d78;
+    --peugeot: #00b4d8;
+    --chevrolet: #f4a261;
+    --volkswagen: #a8dadc;
+    --red: #e06c75;
+    --radius: 10px;
+    --font: 'Barlow', sans-serif;
+    --font-cond: 'Barlow Condensed', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* === HEADER === */
+  .header {
+    background: linear-gradient(135deg, #0d0f14 0%, #161e2e 60%, #1a1408 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 28px 40px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .header-left {}
+
+  .brand-tag {
+    font-family: var(--font-cond);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .header h1 {
+    font-family: var(--font-cond);
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .iva-notice {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(232,193,74,0.1);
+    border: 1px solid rgba(232,193,74,0.3);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+  }
+
+  .iva-notice::before {
+    content: "⚠";
+    font-size: 13px;
+  }
+
+  .header-right {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.18s ease;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+
+  .btn-pdf {
+    background: var(--red);
+    color: #fff;
+  }
+  .btn-pdf:hover { background: #c8535d; transform: translateY(-1px); }
+
+  .btn-xls {
+    background: #3a7d44;
+    color: #fff;
+  }
+  .btn-xls:hover { background: #2e6336; transform: translateY(-1px); }
+
+  /* === CONTROLS === */
+  .controls {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .search-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+    max-width: 420px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 15px;
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    padding: 11px 14px 11px 40px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+
+  .brands-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .brand-btn {
+    font-family: var(--font-cond);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 9px 18px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .brand-btn:hover { border-color: var(--text2); color: var(--text); }
+
+  .brand-btn.active[data-brand="all"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d0f14;
+  }
+  .brand-btn.active[data-brand="peugeot"] {
+    background: var(--peugeot);
+    border-color: var(--peugeot);
+    color: #0d0f14;
+  }
+  .brand-btn.active[data-brand="chevrolet"] {
+    background: var(--chevrolet);
+    border-color: var(--chevrolet);
+    color: #0d0f14;
+  }
+  .brand-btn.active[data-brand="volkswagen"] {
+    background: var(--volkswagen);
+    border-color: var(--volkswagen);
+    color: #0d0f14;
+  }
+
+  .results-info {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+
+  .results-info strong { color: var(--accent); }
+
+  /* === TABLE === */
+  .table-wrapper {
+    padding: 24px 40px 48px;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead th {
+    font-family: var(--font-cond);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  thead th.right { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(42,47,62,0.6);
+    transition: background 0.12s;
+  }
+
+  tbody tr:hover { background: rgba(232,193,74,0.04); }
+
+  td {
+    padding: 13px 16px;
+    vertical-align: middle;
+  }
+
+  .td-code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+
+  .td-desc {
+    font-weight: 500;
+    color: var(--text);
+    max-width: 340px;
+  }
+
+  .td-brand {
+    white-space: nowrap;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: var(--font-cond);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 4px;
+    color: #0d0f14;
+  }
+
+  .badge-peugeot { background: var(--peugeot); }
+  .badge-chevrolet { background: var(--chevrolet); }
+  .badge-volkswagen { background: var(--volkswagen); }
+
+  .td-pvp, .td-may {
+    text-align: right;
+    white-space: nowrap;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .td-pvp { color: var(--text2); }
+
+  .td-may {
+    color: var(--accent2);
+    font-size: 15px;
+  }
+
+  /* === EMPTY STATE === */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text3);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 16px; }
+
+  /* === PRINT / PDF STYLES === */
+  @media print {
+    body { background: #fff; color: #111; }
+    .controls, .header-right, .brand-btn { display: none !important; }
+    .header {
+      background: #fff;
+      border-bottom: 3px solid #111;
+      color: #111;
+    }
+    .header h1, .brand-tag { color: #111; }
+    .header h1 span { color: #c9a03a; }
+    .iva-notice { background: #fffbea; border-color: #c9a03a; color: #7a5f00; }
+    .table-wrapper { padding: 16px 0; }
+    table { font-size: 11px; }
+    thead th { background: #f0f0f0; color: #444; border-bottom: 2px solid #999; }
+    tbody tr { border-bottom: 1px solid #ddd; }
+    tbody tr:hover { background: none; }
+    .td-code { color: #555; }
+    .td-desc { color: #111; }
+    .badge-peugeot { background: #00b4d8; }
+    .badge-chevrolet { background: #f4a261; }
+    .badge-volkswagen { background: #a8dadc; }
+    .td-pvp { color: #555; }
+    .td-may { color: #8a6a00; font-size: 12px; }
+    .results-info { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="brand-tag">Lista de precios — Mayoristas</div>
+    <h1>REPUESTOS <span>ORIGINALES</span></h1>
+    <div class="iva-notice">PRECIOS NO INCLUYEN IVA</div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-pdf" onclick="exportPDF()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><polyline points="9 9 10 9 9 9"/></svg>
+      Exportar PDF
+    </button>
+    <button class="btn btn-xls" onclick="exportXLS()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><polyline points="9 9 10 9 9 9"/></svg>
+      Exportar Excel
+    </button>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="search-wrapper">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="searchInput" placeholder="Buscar por código o descripción..." oninput="applyFilters()">
+  </div>
+
+  <div class="brands-row">
+    <button class="brand-btn active" data-brand="all" onclick="selectBrand('all')">TODAS</button>
+    <button class="brand-btn" data-brand="peugeot" onclick="selectBrand('peugeot')">Peugeot / Citroën</button>
+    <button class="brand-btn" data-brand="chevrolet" onclick="selectBrand('chevrolet')">Chevrolet</button>
+    <button class="brand-btn" data-brand="volkswagen" onclick="selectBrand('volkswagen')">Volkswagen</button>
+  </div>
+
+  <div class="results-info" id="resultsInfo">
+    Mostrando <strong id="countVisible">0</strong> artículos
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <table id="mainTable">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Descripción</th>
+        <th>Marca</th>
+        <th class="right">PVP</th>
+        <th class="right">Precio Mayorista</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+    </tbody>
+  </table>
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div class="icon">🔎</div>
+    <p>No se encontraron artículos con los filtros aplicados.</p>
+  </div>
+</div>
+
+<script>
+const PRODUCTOS = [{"codigo": "XV3-052-107-D -020", "descripcion": "RIMULA R4 X 15W-40 20 LIT", "marca": "volkswagen", "pvp": 137372.4, "mayorista": 123635.16}, {"codigo": "G -052-147-K4", "descripcion": "HELIX HX7 10w40 4x4L", "marca": "volkswagen", "pvp": 68254.78, "mayorista": 51191.1}, {"codigo": "93206675", "descripcion": "BUJ\u00d1A ENCENDIDO", "marca": "chevrolet", "pvp": 6105.91, "mayorista": 4274.14}, {"codigo": "19347338", "descripcion": "BUJIA", "marca": "chevrolet", "pvp": 3004.16, "mayorista": 2102.91}, {"codigo": "9818914980", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 16002.78, "mayorista": 8001.39}, {"codigo": "94716494", "descripcion": "PROTECTOR DEL GUARDABARRO", "marca": "chevrolet", "pvp": 32454.73, "mayorista": 22718.31}, {"codigo": "94716493", "descripcion": "PROTECTOR DEL GUARDABARRO", "marca": "chevrolet", "pvp": 32454.73, "mayorista": 22718.31}, {"codigo": "G -052-545-K4", "descripcion": "ACEITE MOT", "marca": "volkswagen", "pvp": 115256.64, "mayorista": 86442.49}, {"codigo": "812389", "descripcion": "GRAMPA", "marca": "peugeot", "pvp": 3643.29, "mayorista": 2404.57}, {"codigo": "52017222", "descripcion": "DEFENSA ALER\u00d1N LODERA TRASERA", "marca": "chevrolet", "pvp": 31509.46, "mayorista": 22056.62}, {"codigo": "52017221", "descripcion": "DEFENSA ALER\u00d1N LODERA TRASERA", "marca": "chevrolet", "pvp": 31430.67, "mayorista": 22001.47}, {"codigo": "25206966", "descripcion": "FILTRO,ACEITE", "marca": "chevrolet", "pvp": 9696.59, "mayorista": 6787.62}, {"codigo": "24591518", "descripcion": "FILTRO ACEITE", "marca": "chevrolet", "pvp": 7353.02, "mayorista": 5147.11}, {"codigo": "98553892", "descripcion": "5W30 API SP-RC- DEXOS 1 GEN 3", "marca": "chevrolet", "pvp": 75083.82, "mayorista": 52558.68}, {"codigo": "93275736", "descripcion": "TERMOSTATO DE MOTOR", "marca": "chevrolet", "pvp": 29774.77, "mayorista": 20842.34}, {"codigo": "106399", "descripcion": "5W30 API SN/CF - DEXOS 2 - 4 X", "marca": "chevrolet", "pvp": 86602.37, "mayorista": 60621.66}, {"codigo": "1567C6", "descripcion": "FILTRO COMBUSTIBLE", "marca": "peugeot", "pvp": 16648.42, "mayorista": 8324.22}, {"codigo": "1109AY", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 16463.95, "mayorista": 8231.98}, {"codigo": "12636838", "descripcion": "FILTRO DE ACEITE", "marca": "chevrolet", "pvp": 30135.61, "mayorista": 21094.93}, {"codigo": "52101541", "descripcion": "FILTRO DE HABIT\u00d1CULO", "marca": "chevrolet", "pvp": 12419.63, "mayorista": 8693.74}, {"codigo": "13508023", "descripcion": "FILTRO DE HABITACULO", "marca": "chevrolet", "pvp": 15211.5, "mayorista": 10648.06}, {"codigo": "98553895", "descripcion": "0W20 API SP-RC- DEXOS 1 GEN 3", "marca": "chevrolet", "pvp": 101761.95, "mayorista": 71233.36}, {"codigo": "52100212", "descripcion": "FILTRO DE COMBUSTIBLE", "marca": "chevrolet", "pvp": 83115.1, "mayorista": 58180.57}, {"codigo": "19350512", "descripcion": "FILTRO DE AIRE", "marca": "chevrolet", "pvp": 23246.6, "mayorista": 16272.62}, {"codigo": "19347706", "descripcion": "FILTRO DE COMBUSTIBLE", "marca": "chevrolet", "pvp": 6438.99, "mayorista": 4507.29}, {"codigo": "13367308", "descripcion": "FILTRO DE AIRE", "marca": "chevrolet", "pvp": 39952.64, "mayorista": 27966.85}, {"codigo": "1684448280", "descripcion": "KIT CORREA DISTRIBUCION + BOMBA AGUA", "marca": "peugeot", "pvp": 416348.79, "mayorista": 274790.2}, {"codigo": "1906E6", "descripcion": "ELEMENTO FILTRO COMBUST.", "marca": "peugeot", "pvp": 69791.15, "mayorista": 34895.58}, {"codigo": "94757663", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "chevrolet", "pvp": 14137.2, "mayorista": 9896.04}, {"codigo": "G -12E-050-A2", "descripcion": "REFRIGERANTE", "marca": "volkswagen", "pvp": 21968.24, "mayorista": 16476.19}, {"codigo": "93353848", "descripcion": "POLEA TENSORA CORREA DISTRIBUC", "marca": "chevrolet", "pvp": 56543.6, "mayorista": 39580.52}, {"codigo": "24591047", "descripcion": "CORREA DE DISTRIBUCI\u00d1N", "marca": "chevrolet", "pvp": 117004.96, "mayorista": 81903.48}, {"codigo": "19242091", "descripcion": "DEXCOOL LIQUIDO", "marca": "chevrolet", "pvp": 24228.29, "mayorista": 16959.8}, {"codigo": "93326521", "descripcion": "TAPA DEP\u00d1SITO DE AGUA", "marca": "chevrolet", "pvp": 9427.25, "mayorista": 6599.08}, {"codigo": "12645126", "descripcion": "BOMBA DE AGUA", "marca": "chevrolet", "pvp": 168197.74, "mayorista": 117738.42}, {"codigo": "90531677", "descripcion": "CORREA DE DISTRIBUCI\u00d1N", "marca": "chevrolet", "pvp": 34791.25, "mayorista": 24353.88}, {"codigo": "93310435", "descripcion": "SENSOR OX\u00d1GENO", "marca": "chevrolet", "pvp": 121380.31, "mayorista": 84966.22}, {"codigo": "2H0-413-031-N", "descripcion": "AMORTIGUAD", "marca": "volkswagen", "pvp": 126462.16, "mayorista": 94846.62}, {"codigo": "12644510", "descripcion": "POLEA TENSORA DE LA CORREA DIS", "marca": "chevrolet", "pvp": 83239.27, "mayorista": 58267.48}, {"codigo": "G -052-553-K4", "descripcion": "ACEITE MOT", "marca": "volkswagen", "pvp": 26430.01, "mayorista": 19822.51}, {"codigo": "24581174", "descripcion": "CORREA DEL ALTERNADOR", "marca": "chevrolet", "pvp": 66280.27, "mayorista": 46396.19}, {"codigo": "24588988", "descripcion": "TENSOR CORREA", "marca": "chevrolet", "pvp": 83731.81, "mayorista": 58612.27}, {"codigo": "2H0-513-029-H", "descripcion": "AMORTIGUAD", "marca": "volkswagen", "pvp": 84126.46, "mayorista": 63094.85}, {"codigo": "1444VH", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 14404.04, "mayorista": 8642.43}, {"codigo": "5960F3", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 10145.85, "mayorista": 6696.26}, {"codigo": "1980S5", "descripcion": "PORTAINYECTOR", "marca": "peugeot", "pvp": 405249.85, "mayorista": 267464.9}, {"codigo": "26241944", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "chevrolet", "pvp": 18411.72, "mayorista": 12888.2}, {"codigo": "1444TV", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 31144.69, "mayorista": 18686.81}, {"codigo": "24592193", "descripcion": "VOLANTE DE MOTOR", "marca": "chevrolet", "pvp": 1547724.64, "mayorista": 1083407.25}, {"codigo": "106396", "descripcion": "5W30 API SN/CF - DEXOS 2 - 12", "marca": "chevrolet", "pvp": 24166.96, "mayorista": 16916.87}, {"codigo": "24588545", "descripcion": "JUEGO CABLES DE BUJ\u00d1A", "marca": "chevrolet", "pvp": 51690.11, "mayorista": 36183.08}, {"codigo": "24588546", "descripcion": "JUEGO CABLES DE BUJ\u00d1AS", "marca": "chevrolet", "pvp": 47377.06, "mayorista": 33163.94}, {"codigo": "25205813", "descripcion": "TENSIONER,TMG BELT", "marca": "chevrolet", "pvp": 103463.53, "mayorista": 72424.47}, {"codigo": "52102242", "descripcion": "FILTRO HABIT\u00d1CULO", "marca": "chevrolet", "pvp": 13184.66, "mayorista": 9229.26}, {"codigo": "9730AE", "descripcion": "ACEITE CAJA VELOCIDADES", "marca": "peugeot", "pvp": 55125.79, "mayorista": 36383.02}, {"codigo": "25204526", "descripcion": "POLEA INTERM BANDA SINCRO", "marca": "chevrolet", "pvp": 36923.46, "mayorista": 25846.43}, {"codigo": "55486357", "descripcion": "CORREA DE BOMBA DE ACEITE", "marca": "chevrolet", "pvp": 50879.46, "mayorista": 35615.62}, {"codigo": "13545896", "descripcion": "TAPA, LLDO RAD", "marca": "chevrolet", "pvp": 11869.04, "mayorista": 8308.33}, {"codigo": "90411732", "descripcion": "FILTRO DE AIRE", "marca": "chevrolet", "pvp": 5783.05, "mayorista": 4048.13}, {"codigo": "1692660080", "descripcion": "TAPON", "marca": "peugeot", "pvp": 14219.57, "mayorista": 9384.91}, {"codigo": "24579487", "descripcion": "CORREA DEL ALTERNADOR Y BMB", "marca": "chevrolet", "pvp": 14527.05, "mayorista": 10168.94}, {"codigo": "25193473", "descripcion": "BUJ\u00d1A ENCENDIDO", "marca": "chevrolet", "pvp": 6254.77, "mayorista": 4378.34}, {"codigo": "24579488", "descripcion": "CORREA POLI V", "marca": "chevrolet", "pvp": 14518.52, "mayorista": 10162.97}, {"codigo": "000-071-597-D", "descripcion": "ANTIRROBOS", "marca": "volkswagen", "pvp": 166481.82, "mayorista": 124861.36}, {"codigo": "T16-245-70T-11-RBS", "descripcion": "245/70R16 111T DUELER H/T", "marca": "volkswagen", "pvp": 317502.73, "mayorista": 269877.32}, {"codigo": "52160465", "descripcion": "N\u00d1CLEO CALENTADOR", "marca": "chevrolet", "pvp": 199939.81, "mayorista": 139957.86}, {"codigo": "94726697", "descripcion": "EMBELLECEDOR CENTRO LLANTA", "marca": "chevrolet", "pvp": 144117.79, "mayorista": 100882.45}, {"codigo": "5750YQ", "descripcion": "CORREA", "marca": "peugeot", "pvp": 43350.45, "mayorista": 28611.3}, {"codigo": "6479C2", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 21091.07, "mayorista": 10545.54}, {"codigo": "1654517280", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 41152.19, "mayorista": 27160.44}, {"codigo": "5750XR", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 61797.45, "mayorista": 40786.32}, {"codigo": "03L-903-137-AC", "descripcion": "CORREA POL", "marca": "volkswagen", "pvp": 62200.78, "mayorista": 49760.62}, {"codigo": "1109CA", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 21582.99, "mayorista": 10791.5}, {"codigo": "9598708", "descripcion": "TUERCA DE RUEDA", "marca": "chevrolet", "pvp": 6688.09, "mayorista": 4681.67}, {"codigo": "1609428080", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 22382.36, "mayorista": 11191.18}, {"codigo": "26355515", "descripcion": "PROTECTOR KIT", "marca": "chevrolet", "pvp": 110610.93, "mayorista": 77427.65}, {"codigo": "1611424880", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 103041.87, "mayorista": 68007.63}, {"codigo": "52056627", "descripcion": "FILTRO AIRE COMPT PAS", "marca": "chevrolet", "pvp": 9541.47, "mayorista": 6679.02}, {"codigo": "24590404", "descripcion": "POLEA,INTERM BANDA", "marca": "chevrolet", "pvp": 27352.84, "mayorista": 19146.99}, {"codigo": "04C-109-479-J", "descripcion": "RODILLO TENSOR", "marca": "volkswagen", "pvp": 91891.98, "mayorista": 68918.98}, {"codigo": "04E-109-244-D", "descripcion": "RODILLO", "marca": "volkswagen", "pvp": 51872.3, "mayorista": 38904.23}, {"codigo": "190199", "descripcion": "FILTRO COMBUSTIBLE", "marca": "peugeot", "pvp": 72220.01, "mayorista": 36110.01}, {"codigo": "04E-109-119-L", "descripcion": "CORREA DEN", "marca": "volkswagen", "pvp": 58888.51, "mayorista": 44166.39}, {"codigo": "13540602", "descripcion": "SENSOR PRESI\u00d1N NEUM\u00d1TICO", "marca": "chevrolet", "pvp": 92137.32, "mayorista": 64496.12}, {"codigo": "24591142", "descripcion": "CILINDRO, ACTR EMBG", "marca": "chevrolet", "pvp": 74776.41, "mayorista": 52343.49}, {"codigo": "24046020", "descripcion": "CILINDRO, ACTR EMBG", "marca": "chevrolet", "pvp": 163201.93, "mayorista": 114241.35}, {"codigo": "03L-130-277-Q", "descripcion": "UNIDAD INY", "marca": "volkswagen", "pvp": 458718.57, "mayorista": 389910.79}, {"codigo": "9835123980", "descripcion": ".FILTRO AIRE 208 L-N", "marca": "peugeot", "pvp": 22428.48, "mayorista": 13457.09}, {"codigo": "03G-145-276", "descripcion": "RODILLO", "marca": "volkswagen", "pvp": 94889.18, "mayorista": 71166.89}, {"codigo": "1611422880", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 97354.05, "mayorista": 64253.67}, {"codigo": "038-903-315-AN", "descripcion": "ELEMENTO TENSOR", "marca": "volkswagen", "pvp": 182451.38, "mayorista": 145961.1}, {"codigo": "55594651", "descripcion": "FILTRO DE ACEITE", "marca": "chevrolet", "pvp": 20157.29, "mayorista": 14110.11}, {"codigo": "9857304480", "descripcion": "TUBO A/A", "marca": "peugeot", "pvp": 45195.15, "mayorista": 29828.8}, {"codigo": "24591267", "descripcion": "FILTRO,ACEITE", "marca": "chevrolet", "pvp": 246479.44, "mayorista": 172535.61}, {"codigo": "1336AX", "descripcion": "CAJA SALIDA AGUA", "marca": "peugeot", "pvp": 185930.39, "mayorista": 122714.06}, {"codigo": "24592342", "descripcion": "ENGRANAJE, POS CIG", "marca": "chevrolet", "pvp": 22180.46, "mayorista": 15526.32}, {"codigo": "55499413", "descripcion": "CORREA DIST MOTOR", "marca": "chevrolet", "pvp": 132759.26, "mayorista": 92931.49}, {"codigo": "25203350", "descripcion": "BUJIA ENCENDIDO", "marca": "chevrolet", "pvp": 28572.1, "mayorista": 20000.48}, {"codigo": "643230", "descripcion": "TAPA", "marca": "peugeot", "pvp": 6886.88, "mayorista": 4545.34}, {"codigo": "12625560", "descripcion": "TENSOR CORREA DISTRIBUCI\u00d1N", "marca": "chevrolet", "pvp": 66305.68, "mayorista": 46413.97}, {"codigo": "1444TT", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 24242.44, "mayorista": 14545.47}, {"codigo": "0831T4", "descripcion": "KIT CORREA DISTRIBUCION", "marca": "peugeot", "pvp": 270064.08, "mayorista": 178242.3}, {"codigo": "12625214", "descripcion": "BALANC\u00d1N", "marca": "chevrolet", "pvp": 68906.04, "mayorista": 48234.23}, {"codigo": "42626074", "descripcion": "MANGUERA AIRE DE ENTRADA", "marca": "chevrolet", "pvp": 278613.24, "mayorista": 195029.26}, {"codigo": "0831S0", "descripcion": "KIT DISTRIBUCION", "marca": "peugeot", "pvp": 115447.48, "mayorista": 76195.34}, {"codigo": "634679", "descripcion": "CIRCUITO IMPRESO", "marca": "peugeot", "pvp": 77969.32, "mayorista": 51459.75}, {"codigo": "9830143880", "descripcion": "CAJA ELECT.ELECTROVENTIL", "marca": "peugeot", "pvp": 90344.19, "mayorista": 59627.16}, {"codigo": "42695041", "descripcion": "RADIADOR INTERCOOLER", "marca": "chevrolet", "pvp": 496855.72, "mayorista": 347799.0}, {"codigo": "1623179580", "descripcion": "RETEN  IZQ", "marca": "peugeot", "pvp": 51590.11, "mayorista": 34049.48}, {"codigo": "94702060", "descripcion": "CORREA POLI V", "marca": "chevrolet", "pvp": 15927.77, "mayorista": 11149.44}, {"codigo": "059-198-405-B", "descripcion": "ELEMENTO F", "marca": "volkswagen", "pvp": 30823.66, "mayorista": 23117.74}, {"codigo": "6501634880", "descripcion": "TAPON", "marca": "peugeot", "pvp": 13435.57, "mayorista": 8867.47}, {"codigo": "12704670", "descripcion": "BUJIA", "marca": "chevrolet", "pvp": 22301.68, "mayorista": 15611.18}, {"codigo": "24591980", "descripcion": "POLEA, INTERM BANDA", "marca": "chevrolet", "pvp": 54906.6, "mayorista": 38434.62}, {"codigo": "03L-115-562", "descripcion": "ELEMENTO F", "marca": "volkswagen", "pvp": 37135.27, "mayorista": 29708.22}, {"codigo": "575194", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 106070.25, "mayorista": 70006.37}, {"codigo": "9801366680", "descripcion": "FILTRO CARTUCHO", "marca": "peugeot", "pvp": 47793.11, "mayorista": 23896.55}, {"codigo": "9833804980", "descripcion": "CABLE EMBRAGUE", "marca": "peugeot", "pvp": 169036.01, "mayorista": 111563.77}, {"codigo": "39103796", "descripcion": "PASTILLA DE FRENO DELANTERA", "marca": "chevrolet", "pvp": 178955.25, "mayorista": 125268.67}, {"codigo": "55498703", "descripcion": "CORREA DIST MOTOR", "marca": "chevrolet", "pvp": 129738.38, "mayorista": 90816.87}, {"codigo": "030-103-485-AC", "descripcion": "TAPA", "marca": "volkswagen", "pvp": 10537.1, "mayorista": 8429.67}, {"codigo": "1654509380", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 18093.44, "mayorista": 11941.67}, {"codigo": "8120S9", "descripcion": "EMBELLECEDOR  DER.", "marca": "peugeot", "pvp": 70867.23, "mayorista": 46772.37}, {"codigo": "20958083", "descripcion": "CRAPODINA DE EMBRAGUE", "marca": "chevrolet", "pvp": 124250.46, "mayorista": 86975.32}, {"codigo": "52068049", "descripcion": "PUENTE CARD\u00d1N", "marca": "chevrolet", "pvp": 333181.08, "mayorista": 233226.75}, {"codigo": "88903798", "descripcion": "BOMBA DE AGUA", "marca": "chevrolet", "pvp": 45734.18, "mayorista": 32013.93}, {"codigo": "1611425680", "descripcion": "RODILLO", "marca": "peugeot", "pvp": 123748.63, "mayorista": 81674.1}, {"codigo": "1643639680", "descripcion": "KIT CORREA DISTRIBUCION+BOMBA 1.6 N", "marca": "peugeot", "pvp": 444034.67, "mayorista": 293062.88}, {"codigo": "90570371", "descripcion": "CORREA DE DISTRIBUCI\u00d1N", "marca": "chevrolet", "pvp": 64943.1, "mayorista": 45460.17}, {"codigo": "2H0-129-620-A", "descripcion": "FILTRO AIR", "marca": "volkswagen", "pvp": 62168.85, "mayorista": 49735.08}, {"codigo": "1444VK", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 19430.84, "mayorista": 11658.5}, {"codigo": "1632745480", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 9932.43, "mayorista": 6555.41}, {"codigo": "6447XF", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 22889.66, "mayorista": 11444.83}, {"codigo": "6479A1", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 18662.22, "mayorista": 9331.11}, {"codigo": "12625215", "descripcion": "CORREA DISTRIBUCI\u00d1N", "marca": "chevrolet", "pvp": 125282.87, "mayorista": 87698.01}, {"codigo": "98550735", "descripcion": "KIT PASTILLAS FRN DISC DLNT", "marca": "chevrolet", "pvp": 32838.59, "mayorista": 22987.01}, {"codigo": "03L-198-119-F", "descripcion": "KIT REPARACION", "marca": "volkswagen", "pvp": 482598.89, "mayorista": 386079.11}, {"codigo": "04E-260-849-J", "descripcion": "CORREA POL", "marca": "volkswagen", "pvp": 34307.64, "mayorista": 24701.5}, {"codigo": "1623179680", "descripcion": "RETEN DR.", "marca": "peugeot", "pvp": 20845.11, "mayorista": 16676.09}, {"codigo": "210535", "descripcion": "BUJE GUIA", "marca": "peugeot", "pvp": 52604.69, "mayorista": 34719.1}, {"codigo": "88905678", "descripcion": "JUEGO DE CABLES ELECTRICOS", "marca": "chevrolet", "pvp": 32900.24, "mayorista": 23030.17}, {"codigo": "2H6-129-620-A", "descripcion": "FILTRO AIR", "marca": "volkswagen", "pvp": 89370.17, "mayorista": 64346.52}, {"codigo": "7H0-819-631", "descripcion": "FILTRO", "marca": "volkswagen", "pvp": 37646.17, "mayorista": 30116.93}, {"codigo": "8120S8", "descripcion": "EMBELLECEDOR  IZQ", "marca": "peugeot", "pvp": 70867.23, "mayorista": 46772.37}, {"codigo": "25208524", "descripcion": "COJINETE, SPT CNTR FLE PROP", "marca": "chevrolet", "pvp": 20438.92, "mayorista": 14307.25}, {"codigo": "03L-121-011-Q", "descripcion": "BOMBA", "marca": "volkswagen", "pvp": 262962.07, "mayorista": 184073.45}, {"codigo": "1611273080", "descripcion": "MECANISMO DISCO RODAM.", "marca": "peugeot", "pvp": 460698.46, "mayorista": 304060.98}, {"codigo": "190195", "descripcion": "FILTRO COMBUSTIBLE", "marca": "peugeot", "pvp": 62719.8, "mayorista": 31359.9}, {"codigo": "1444VX", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 21029.58, "mayorista": 12617.75}, {"codigo": "1643637980", "descripcion": "KIT CORREA DISTRIBUCION 1.6 N", "marca": "peugeot", "pvp": 284729.45, "mayorista": 187921.44}, {"codigo": "2H0-127-401-G", "descripcion": "FILTRO", "marca": "volkswagen", "pvp": 221740.19, "mayorista": 159652.93}, {"codigo": "1611818780", "descripcion": "CAPUCHON", "marca": "peugeot", "pvp": 6425.71, "mayorista": 4240.96}, {"codigo": "1613837480", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 77385.16, "mayorista": 51074.21}, {"codigo": "9816863980", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 20030.37, "mayorista": 13220.04}, {"codigo": "19380537", "descripcion": "JUEGO ALMOHADILLAS DE FRICCION", "marca": "chevrolet", "pvp": 40645.45, "mayorista": 28451.82}, {"codigo": "19350511", "descripcion": "FILTRO DE AIRE", "marca": "chevrolet", "pvp": 13559.43, "mayorista": 9491.6}, {"codigo": "95021102", "descripcion": "FILTRO DE AIRE", "marca": "chevrolet", "pvp": 45577.76, "mayorista": 31904.43}, {"codigo": "101866", "descripcion": "ASPIRADOR", "marca": "peugeot", "pvp": 75171.53, "mayorista": 49613.21}, {"codigo": "1109AL", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 18231.78, "mayorista": 9115.9}, {"codigo": "1336Q1", "descripcion": "TERMOSTATO", "marca": "peugeot", "pvp": 77415.91, "mayorista": 51094.51}, {"codigo": "1608747480", "descripcion": "KIT CORREA DISTRIBUCION", "marca": "peugeot", "pvp": 270402.28, "mayorista": 178465.51}, {"codigo": "1635X0", "descripcion": "CAJA MARIPOSA", "marca": "peugeot", "pvp": 501266.48, "mayorista": 330835.88}, {"codigo": "210538", "descripcion": "BUJE GUIA", "marca": "peugeot", "pvp": 46025.27, "mayorista": 30376.68}, {"codigo": "0248R6", "descripcion": "TAPA BOTADORES", "marca": "peugeot", "pvp": 371307.37, "mayorista": 245062.86}, {"codigo": "9800716580", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 49560.94, "mayorista": 32710.22}, {"codigo": "9836527180", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 18308.65, "mayorista": 9154.33}, {"codigo": "25199824", "descripcion": "CAJA TERMOSTATO", "marca": "chevrolet", "pvp": 584151.28, "mayorista": 408905.89}, {"codigo": "2641195", "descripcion": "BOMBA DE AGUA ACDELCO", "marca": "chevrolet", "pvp": 87119.55, "mayorista": 60983.68}, {"codigo": "94722019", "descripcion": "POLEA TENSORA DE LA CORREA", "marca": "chevrolet", "pvp": 41466.21, "mayorista": 29026.35}, {"codigo": "059-121-086-BG", "descripcion": "TUBO AGUA", "marca": "volkswagen", "pvp": 348120.04, "mayorista": 261090.03}, {"codigo": "24591057", "descripcion": "BOMBA AGUA", "marca": "chevrolet", "pvp": 104259.11, "mayorista": 72981.38}, {"codigo": "25204318", "descripcion": "TENSIONADOR, CINTURON COND", "marca": "chevrolet", "pvp": 136496.38, "mayorista": 95547.46}, {"codigo": "52123271", "descripcion": "POLEA VISCOSA", "marca": "chevrolet", "pvp": 502334.68, "mayorista": 351634.27}, {"codigo": "55591186", "descripcion": "CORREA PARA TRANSMISION SIN FI", "marca": "chevrolet", "pvp": 53195.19, "mayorista": 37236.63}, {"codigo": "1611422980", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 57324.06, "mayorista": 37833.87}, {"codigo": "1679453080", "descripcion": "MECANISMO DISCO RODAM.", "marca": "peugeot", "pvp": 308095.65, "mayorista": 203343.13}, {"codigo": "9800097580", "descripcion": "FILTRO AIRE", "marca": "peugeot", "pvp": 33773.39, "mayorista": 20264.03}, {"codigo": "93373723", "descripcion": "PERNO", "marca": "chevrolet", "pvp": 2584.58, "mayorista": 1809.2}, {"codigo": "1615099780", "descripcion": "LIQUIDO HIDRAULICO", "marca": "peugeot", "pvp": 65348.5, "mayorista": 43130.01}, {"codigo": "9833350880", "descripcion": "FILTRO DE PARTICULAS", "marca": "peugeot", "pvp": 53788.38, "mayorista": 26894.2}, {"codigo": "19375499", "descripcion": "BOBINA ENCENDIDO", "marca": "chevrolet", "pvp": 180755.4, "mayorista": 126528.78}, {"codigo": "95492916", "descripcion": "SENSOR INDICADOR AGUA", "marca": "chevrolet", "pvp": 89245.57, "mayorista": 62471.9}, {"codigo": "9594683", "descripcion": "TUERCA DE RUEDA", "marca": "chevrolet", "pvp": 6601.71, "mayorista": 4621.2}, {"codigo": "G -004-000-M2", "descripcion": "ACEITE", "marca": "volkswagen", "pvp": 56538.43, "mayorista": 42403.82}, {"codigo": "JZZ-109-119", "descripcion": "CORREA DEN", "marca": "volkswagen", "pvp": 26926.88, "mayorista": 22887.84}, {"codigo": "1636996080", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 166253.59, "mayorista": 109727.38}, {"codigo": "1675941180", "descripcion": "TENSOR", "marca": "peugeot", "pvp": 115355.24, "mayorista": 76134.45}, {"codigo": "9736A0", "descripcion": "ADITIVO FILTRO PARTICULA", "marca": "peugeot", "pvp": 224776.7, "mayorista": 191060.19}, {"codigo": "9802348680", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 21506.13, "mayorista": 12903.68}, {"codigo": "19380535", "descripcion": "JUEGO ALMOHADILLAS DE FRICCION", "marca": "chevrolet", "pvp": 32072.36, "mayorista": 22450.65}, {"codigo": "52131515", "descripcion": "EMBELLECEDOR CENTRO LLANTA", "marca": "chevrolet", "pvp": 67836.14, "mayorista": 47485.29}, {"codigo": "55575247", "descripcion": "CORREA DIST MOTOR", "marca": "chevrolet", "pvp": 72227.19, "mayorista": 50559.04}, {"codigo": "85640458", "descripcion": "TUERCAS ANTIRROBO", "marca": "chevrolet", "pvp": 206879.83, "mayorista": 144815.88}, {"codigo": "04E-145-933-AD", "descripcion": "CORREA POL", "marca": "volkswagen", "pvp": 24941.33, "mayorista": 17957.76}, {"codigo": "081830", "descripcion": "GUIA", "marca": "peugeot", "pvp": 29438.34, "mayorista": 19429.31}, {"codigo": "9813973280", "descripcion": "CARTER ACEITE", "marca": "peugeot", "pvp": 95893.66, "mayorista": 63289.81}, {"codigo": "19283185", "descripcion": "JUEGO ALMOHADILLAS DE FRICCION", "marca": "chevrolet", "pvp": 63728.96, "mayorista": 44610.27}, {"codigo": "19347742", "descripcion": "FILTRO DE AIRE", "marca": "chevrolet", "pvp": 8738.69, "mayorista": 6117.08}, {"codigo": "24592025", "descripcion": "POLEA, GEN", "marca": "chevrolet", "pvp": 201414.15, "mayorista": 140989.9}, {"codigo": "39101926", "descripcion": "PASTILLA DE FRENO", "marca": "chevrolet", "pvp": 204567.85, "mayorista": 143197.49}, {"codigo": "84677802", "descripcion": "CAJA DE DIRECCI\u00d1N", "marca": "chevrolet", "pvp": 5766101.68, "mayorista": 4036271.17}, {"codigo": "88863898FC", "descripcion": "FLUIDO TRASMISION AUTOMATICA ALT X LIT", "marca": "chevrolet", "pvp": 55093.4, "mayorista": 38565.38}, {"codigo": "88905845", "descripcion": "FILTRO ACEITE", "marca": "chevrolet", "pvp": 8127.46, "mayorista": 5689.22}, {"codigo": "030-109-243-Q", "descripcion": "ROD TENSOR", "marca": "volkswagen", "pvp": 58610.38, "mayorista": 52749.33}, {"codigo": "5U0-035-209", "descripcion": "PLACA", "marca": "volkswagen", "pvp": 142708.45, "mayorista": 107031.33}, {"codigo": "699218", "descripcion": "GRAMPA PLASTICA", "marca": "peugeot", "pvp": 6425.71, "mayorista": 4240.96}, {"codigo": "11611063", "descripcion": "ESPARRAGO DE RUEDA", "marca": "chevrolet", "pvp": 5740.56, "mayorista": 4018.39}, {"codigo": "55487381", "descripcion": "TAPA CORREA DISTRIBUCI\u00d1N", "marca": "chevrolet", "pvp": 40866.0, "mayorista": 28606.2}, {"codigo": "1336Z0", "descripcion": "CAJA SALIDA AGUA", "marca": "peugeot", "pvp": 217551.62, "mayorista": 143584.07}, {"codigo": "1642333780", "descripcion": "ESCOBILLA LIMPIAPARAB.IZ", "marca": "peugeot", "pvp": 49560.94, "mayorista": 34692.66}, {"codigo": "1642333980", "descripcion": "ESCOBILLA LIMPIAPARAB.DR", "marca": "peugeot", "pvp": 49560.94, "mayorista": 34692.66}, {"codigo": "190197", "descripcion": "FILTRO COMBUSTIBLE", "marca": "peugeot", "pvp": 222839.76, "mayorista": 111419.88}, {"codigo": "9726261", "descripcion": "ACEITE MOTOR INEO 1 LT", "marca": "peugeot", "pvp": 44657.12, "mayorista": 29473.7}, {"codigo": "9816058680", "descripcion": "PATIN", "marca": "peugeot", "pvp": 32159.27, "mayorista": 21225.12}, {"codigo": "9833702580", "descripcion": "PI\u00d1ON", "marca": "peugeot", "pvp": 54941.32, "mayorista": 36261.27}, {"codigo": "19380536", "descripcion": "JUEGO ALMOHADILLAS DE FRICCION", "marca": "chevrolet", "pvp": 44464.63, "mayorista": 31125.24}, {"codigo": "PMR-055-203-A", "descripcion": "MAZO GANCHO REMOLQUE", "marca": "volkswagen", "pvp": 176001.39, "mayorista": 140801.11}, {"codigo": "081831", "descripcion": "GUIA", "marca": "peugeot", "pvp": 43780.88, "mayorista": 28895.38}, {"codigo": "1444VZ", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 23904.24, "mayorista": 14342.55}, {"codigo": "9822827180", "descripcion": "CADENA DISTRIBUCION", "marca": "peugeot", "pvp": 161319.02, "mayorista": 106470.55}, {"codigo": "24580378", "descripcion": "PLACA DEL EMBRAGUE", "marca": "chevrolet", "pvp": 515830.83, "mayorista": 361081.58}, {"codigo": "24581617", "descripcion": "DISCO EMBRAGUE", "marca": "chevrolet", "pvp": 635337.51, "mayorista": 444736.26}, {"codigo": "24582406", "descripcion": "TENSOR CORREA POLI V", "marca": "chevrolet", "pvp": 117084.83, "mayorista": 81959.38}, {"codigo": "04E-115-561-T", "descripcion": "FILTRO de ACEITE", "marca": "volkswagen", "pvp": 38929.78, "mayorista": 29197.33}, {"codigo": "2H6-127-401-C", "descripcion": "FILTRO", "marca": "volkswagen", "pvp": 174928.52, "mayorista": 131196.4}, {"codigo": "1674213480", "descripcion": "ELEMENTO FILTRO", "marca": "peugeot", "pvp": 76678.03, "mayorista": 50607.5}, {"codigo": "2182J2", "descripcion": "RECEPTOR", "marca": "peugeot", "pvp": 189204.73, "mayorista": 124875.12}, {"codigo": "6423G4", "descripcion": "ESCOBILLA LIMPIALUNETA", "marca": "peugeot", "pvp": 12434.94, "mayorista": 8207.06}, {"codigo": "9800716180", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 45179.78, "mayorista": 29818.66}, {"codigo": "9808867880", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 23104.87, "mayorista": 11552.44}, {"codigo": "88904447", "descripcion": "ORREA CVA", "marca": "chevrolet", "pvp": 23542.95, "mayorista": 16480.07}, {"codigo": "96950990", "descripcion": "FILTRO DE AIRE", "marca": "chevrolet", "pvp": 64063.32, "mayorista": 44844.33}, {"codigo": "T17-245-65T-11-RBS", "descripcion": "245/65R17 111T DUELER H/T", "marca": "volkswagen", "pvp": 302326.3, "mayorista": 256977.36}, {"codigo": "1606402680", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 30560.53, "mayorista": 18336.32}, {"codigo": "1610693780", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 23596.79, "mayorista": 11798.4}, {"codigo": "6479K9", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 41475.01, "mayorista": 20737.51}, {"codigo": "26053326", "descripcion": "COJINETE", "marca": "chevrolet", "pvp": 63201.58, "mayorista": 41081.03}, {"codigo": "55574864", "descripcion": "TENSOR CORREA DISTRIBUCI\u00d1N", "marca": "chevrolet", "pvp": 170691.47, "mayorista": 119484.02}, {"codigo": "98500020", "descripcion": "JUEGO-EMGRAGUE DE MOTOR", "marca": "chevrolet", "pvp": 782415.3, "mayorista": 547690.72}, {"codigo": "031129", "descripcion": "TAPON", "marca": "peugeot", "pvp": 3904.62, "mayorista": 2577.05}, {"codigo": "1635157180", "descripcion": "ESCOBILLA LIMPIALUNETA", "marca": "peugeot", "pvp": 14696.11, "mayorista": 9699.44}, {"codigo": "1684448180", "descripcion": "KIT CORREA DISTRI + BOMBA DE AGUA HDI", "marca": "peugeot", "pvp": 494871.52, "mayorista": 326615.2}, {"codigo": "184475", "descripcion": "SOPORTE ELASTICO DR.", "marca": "peugeot", "pvp": 168713.19, "mayorista": 118099.23}, {"codigo": "1982F7", "descripcion": "PROTECTOR", "marca": "peugeot", "pvp": 2920.78, "mayorista": 1927.72}, {"codigo": "5960G4", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 38892.43, "mayorista": 25669.01}, {"codigo": "6216A1", "descripcion": "LAMPARA", "marca": "peugeot", "pvp": 3182.11, "mayorista": 2100.2}, {"codigo": "6479C9", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 12897.53, "mayorista": 6448.77}, {"codigo": "6992W9", "descripcion": "GRAMPA", "marca": "peugeot", "pvp": 1045.33, "mayorista": 689.92}, {"codigo": "9827870080", "descripcion": "CAJA ELECT.ELECTROVENTIL", "marca": "peugeot", "pvp": 143886.6, "mayorista": 94965.16}, {"codigo": "9833964280", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 39722.54, "mayorista": 26216.87}, {"codigo": "9859861880", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 50221.96, "mayorista": 30133.18}, {"codigo": "15286593", "descripcion": "JUNRA DEL EJE DELANTERO", "marca": "chevrolet", "pvp": 58625.92, "mayorista": 41038.14}, {"codigo": "25204391", "descripcion": "BOMBA DE AGUA", "marca": "chevrolet", "pvp": 239944.62, "mayorista": 167961.23}, {"codigo": "93281612", "descripcion": "FILTRO DE COMBUSTIBLE", "marca": "chevrolet", "pvp": 11550.41, "mayorista": 8085.29}, {"codigo": "0831W1", "descripcion": "KIT CORREA DISTRIBUCION", "marca": "peugeot", "pvp": 259887.49, "mayorista": 171525.74}, {"codigo": "1109AN", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 15867.97, "mayorista": 7933.99}, {"codigo": "1609417080", "descripcion": "BOMBA AGUA", "marca": "peugeot", "pvp": 86270.47, "mayorista": 56938.51}, {"codigo": "1610725580", "descripcion": "LIQUIDO DE FRENO", "marca": "peugeot", "pvp": 15433.99, "mayorista": 12347.19}, {"codigo": "1678169580", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 39507.33, "mayorista": 26074.84}, {"codigo": "9674725580", "descripcion": "FILTRO CARTUCHO", "marca": "peugeot", "pvp": 25395.37, "mayorista": 15237.22}, {"codigo": "9726119", "descripcion": "ACEITE CAJA VELOCIDADES  1LT", "marca": "peugeot", "pvp": 27993.33, "mayorista": 18475.6}, {"codigo": "19314692", "descripcion": "JUEGO ALMOHADILLAS DE FRICCION", "marca": "chevrolet", "pvp": 50065.27, "mayorista": 35045.69}, {"codigo": "24436052", "descripcion": "TENSOR DE DISTRIBUCI\u00d1N", "marca": "chevrolet", "pvp": 166596.17, "mayorista": 116617.31}, {"codigo": "94716850", "descripcion": "POLEA VISCOSA DEL VENTILADOR", "marca": "chevrolet", "pvp": 684102.97, "mayorista": 478872.08}, {"codigo": "1606267680", "descripcion": "ELEMENTO FILTRO COMBUST.", "marca": "peugeot", "pvp": 77108.46, "mayorista": 38554.23}, {"codigo": "179774", "descripcion": "JGO.FIJACION", "marca": "peugeot", "pvp": 72097.03, "mayorista": 47584.04}, {"codigo": "5960K3", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 22628.32, "mayorista": 14934.69}, {"codigo": "9808647080", "descripcion": "CAJA SALIDA AGUA", "marca": "peugeot", "pvp": 284206.78, "mayorista": 187576.48}, {"codigo": "25199828", "descripcion": "TERMOSTATO DE MOTOR", "marca": "chevrolet", "pvp": 416027.34, "mayorista": 291219.14}, {"codigo": "2641098", "descripcion": "BOMBAS DE AGUA MOD BA504", "marca": "chevrolet", "pvp": 49821.98, "mayorista": 34875.39}, {"codigo": "94702968", "descripcion": "TENSOR CORREA POLI V", "marca": "chevrolet", "pvp": 74666.0, "mayorista": 52266.2}, {"codigo": "0831T3", "descripcion": "KIT CORREA DISTRIBUCION", "marca": "peugeot", "pvp": 258150.4, "mayorista": 170379.26}, {"codigo": "1611268580", "descripcion": "MECANISMO DISCO RODAM.", "marca": "peugeot", "pvp": 491627.93, "mayorista": 324474.44}, {"codigo": "1654516080", "descripcion": "KIT CORREA DISTRIBUCION", "marca": "peugeot", "pvp": 333521.76, "mayorista": 220124.37}, {"codigo": "5750XG", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 43165.98, "mayorista": 28489.55}, {"codigo": "9677361180", "descripcion": "LIMITADOR", "marca": "peugeot", "pvp": 106577.55, "mayorista": 74604.29}, {"codigo": "9805264280", "descripcion": "JUNTA TAPA BOTADORES", "marca": "peugeot", "pvp": 93280.33, "mayorista": 61565.02}, {"codigo": "9821501880", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 45425.74, "mayorista": 27255.45}, {"codigo": "9821858280", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 55494.73, "mayorista": 36626.52}, {"codigo": "24422061", "descripcion": "CRAPODINA HIDR\u00d1ULICA", "marca": "chevrolet", "pvp": 232803.21, "mayorista": 162962.25}, {"codigo": "24587106", "descripcion": "SOPORTE VENTILADOR", "marca": "chevrolet", "pvp": 627337.17, "mayorista": 439136.02}, {"codigo": "52151339", "descripcion": "LIMPIAPARABRISAS", "marca": "chevrolet", "pvp": 61532.87, "mayorista": 43073.01}, {"codigo": "84685318", "descripcion": "COJINETE RUEDA DELANT", "marca": "chevrolet", "pvp": 612813.59, "mayorista": 428969.51}, {"codigo": "03L-121-111-AK", "descripcion": "REGULADOR", "marca": "volkswagen", "pvp": 187087.69, "mayorista": 140315.77}, {"codigo": "04E-121-600-DF", "descripcion": "BOMBA AGUA", "marca": "volkswagen", "pvp": 350640.41, "mayorista": 262980.31}, {"codigo": "04E-129-620-B", "descripcion": "FILTRO AIR", "marca": "volkswagen", "pvp": 51191.11, "mayorista": 38393.33}, {"codigo": "2H2-061-162-D", "descripcion": "COBERTOR CABINA DOBLE", "marca": "volkswagen", "pvp": 372023.28, "mayorista": 297618.62}, {"codigo": "2Q0-819-644", "descripcion": "FILTRO", "marca": "volkswagen", "pvp": 39522.97, "mayorista": 28456.54}, {"codigo": "T18-215-55V-95-RBS", "descripcion": "215/55R18 99V DUELER HP S", "marca": "volkswagen", "pvp": 352694.0, "mayorista": 299789.9}, {"codigo": "0249E7", "descripcion": "JUNTA", "marca": "peugeot", "pvp": 33588.92, "mayorista": 22168.69}, {"codigo": "1444XF", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 33112.37, "mayorista": 19867.42}, {"codigo": "1613518580", "descripcion": "BOMBA AGUA", "marca": "peugeot", "pvp": 304590.72, "mayorista": 201029.87}, {"codigo": "1686475080", "descripcion": "FILTRO ACEITE", "marca": "peugeot", "pvp": 59998.87, "mayorista": 29999.44}, {"codigo": "1906A7", "descripcion": "ELEMENTO FILTRO COMBUST.", "marca": "peugeot", "pvp": 46240.48, "mayorista": 23120.24}, {"codigo": "212831", "descripcion": "BIELETA", "marca": "peugeot", "pvp": 53634.66, "mayorista": 35398.87}, {"codigo": "2344F2", "descripcion": "JGO.ENGRANAJES", "marca": "peugeot", "pvp": 266989.58, "mayorista": 176213.12}, {"codigo": "6216A4", "descripcion": "LAMPARA", "marca": "peugeot", "pvp": 2586.13, "mayorista": 1706.85}, {"codigo": "9722E71", "descripcion": "LIQUIDO LAVACRISTAL LV 1", "marca": "peugeot", "pvp": 7301.94, "mayorista": 5841.55}, {"codigo": "9844496580", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 29161.64, "mayorista": 14580.82}, {"codigo": "12706611", "descripcion": "BUJIA", "marca": "chevrolet", "pvp": 32506.89, "mayorista": 22754.82}, {"codigo": "19380534", "descripcion": "JUEGO ALMOHADILLAS DE FRICCION", "marca": "chevrolet", "pvp": 41706.16, "mayorista": 29194.31}, {"codigo": "98554499", "descripcion": "ESCOB LIMP PARAB", "marca": "chevrolet", "pvp": 110227.6, "mayorista": 77159.32}, {"codigo": "03L-109-236", "descripcion": "CUBO", "marca": "volkswagen", "pvp": 209703.07, "mayorista": 157277.3}, {"codigo": "059-121-016-E", "descripcion": "BOMBA AGUA", "marca": "volkswagen", "pvp": 438819.92, "mayorista": 329114.94}, {"codigo": "016488", "descripcion": "JUNTA", "marca": "peugeot", "pvp": 5964.53, "mayorista": 3936.59}, {"codigo": "0249E6", "descripcion": "JUNTA", "marca": "peugeot", "pvp": 69422.21, "mayorista": 45818.66}, {"codigo": "0831V3", "descripcion": "KIT", "marca": "peugeot", "pvp": 206268.21, "mayorista": 136137.01}, {"codigo": "1611266180", "descripcion": "RODAMIENTO EMPUJE", "marca": "peugeot", "pvp": 38646.47, "mayorista": 25506.67}, {"codigo": "1611424580", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 206913.85, "mayorista": 136563.14}, {"codigo": "1684447980", "descripcion": "BOMBA AGUA HDI 1.6", "marca": "peugeot", "pvp": 133494.79, "mayorista": 88106.56}, {"codigo": "211758", "descripcion": "HORQUILLA", "marca": "peugeot", "pvp": 82980.76, "mayorista": 54767.29}, {"codigo": "214878", "descripcion": "RESORTE", "marca": "peugeot", "pvp": 37662.62, "mayorista": 24857.34}, {"codigo": "2182J1", "descripcion": "EMISOR", "marca": "peugeot", "pvp": 233938.71, "mayorista": 154399.54}, {"codigo": "5750ZH", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 35802.56, "mayorista": 23629.68}, {"codigo": "6447AZ", "descripcion": "FILTROPOLEN", "marca": "peugeot", "pvp": 30929.47, "mayorista": 15464.74}, {"codigo": "9805552080", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 50975.21, "mayorista": 30585.13}, {"codigo": "9811909980", "descripcion": "TUBO AIRE", "marca": "peugeot", "pvp": 524986.25, "mayorista": 346490.93}, {"codigo": "9812071480", "descripcion": "TAPA BOTADORES", "marca": "peugeot", "pvp": 528998.47, "mayorista": 349138.99}, {"codigo": "98297178TW", "descripcion": "ADORNO RUEDA", "marca": "peugeot", "pvp": 133679.26, "mayorista": 88228.32}, {"codigo": "9837204380", "descripcion": "CABLE EMBRAGUE", "marca": "peugeot", "pvp": 79583.44, "mayorista": 52525.07}, {"codigo": "V760401480", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 40767.87, "mayorista": 26906.79}, {"codigo": "0H71255C", "descripcion": "LAMPARA", "marca": "chevrolet", "pvp": 14806.17, "mayorista": 10364.32}, {"codigo": "19374951", "descripcion": "BOBINA DE ENCENDIDO", "marca": "chevrolet", "pvp": 127320.6, "mayorista": 89124.42}, {"codigo": "24586360", "descripcion": "JUEGO EMBRAGUE PLACA-DISCO", "marca": "chevrolet", "pvp": 364823.95, "mayorista": 255376.77}, {"codigo": "25192905", "descripcion": "TUBO CALENTADOR ACELERADOR", "marca": "chevrolet", "pvp": 141427.32, "mayorista": 98999.12}, {"codigo": "93370527", "descripcion": "FILTRO DE COMBUSTIBLE", "marca": "chevrolet", "pvp": 16668.64, "mayorista": 11668.05}, {"codigo": "94736156", "descripcion": "DEP\u00d1SITO EXPANSI\u00d1N/AGUA", "marca": "chevrolet", "pvp": 27912.2, "mayorista": 19538.54}, {"codigo": "030-198-955-A", "descripcion": "|UEGO REP.", "marca": "volkswagen", "pvp": 93372.55, "mayorista": 79366.67}, {"codigo": "030-198-955-C", "descripcion": "JUEGO REP.", "marca": "volkswagen", "pvp": 31224.36, "mayorista": 26540.7}, {"codigo": "032-121-026-CN", "descripcion": "REGUL.AGUA", "marca": "volkswagen", "pvp": 225630.65, "mayorista": 157941.45}, {"codigo": "04E-129-620", "descripcion": "FILTRO AIRE", "marca": "volkswagen", "pvp": 53847.74, "mayorista": 40385.81}, {"codigo": "L7K-129-620", "descripcion": "Filtro de aire", "marca": "volkswagen", "pvp": 14577.96, "mayorista": 11662.36}, {"codigo": "012745", "descripcion": "RETEN CIGUE\u00d1AL", "marca": "peugeot", "pvp": 100736.0, "mayorista": 66485.76}, {"codigo": "1312A4", "descripcion": "SOPORTE", "marca": "peugeot", "pvp": 6610.18, "mayorista": 4362.72}, {"codigo": "131322", "descripcion": "ANILLO GOMA", "marca": "peugeot", "pvp": 2797.8, "mayorista": 1846.55}, {"codigo": "1444TZ", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 32128.53, "mayorista": 19277.12}, {"codigo": "1610033280", "descripcion": "ESCOBILLA LIMPIAPARAB.", "marca": "peugeot", "pvp": 56724.53, "mayorista": 37438.19}, {"codigo": "1610278280", "descripcion": "KIT DISTRIBUCION +BOMBA AGUA", "marca": "peugeot", "pvp": 639987.92, "mayorista": 422392.03}, {"codigo": "1611503780", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 113387.56, "mayorista": 74835.79}, {"codigo": "1613840080", "descripcion": "TENSOR", "marca": "peugeot", "pvp": 142380.1, "mayorista": 93970.87}, {"codigo": "1614085980", "descripcion": "JUNTA ESTANQUEIDAD", "marca": "peugeot", "pvp": 63370.84, "mayorista": 45291.07}, {"codigo": "1673370680", "descripcion": "JGO.4 PASTILLAS FRENO DL", "marca": "peugeot", "pvp": 274706.58, "mayorista": 181306.35}, {"codigo": "232120", "descripcion": "MAZA SINCRONIZADO", "marca": "peugeot", "pvp": 88499.49, "mayorista": 58409.66}, {"codigo": "5751E8", "descripcion": "RODILLO TENSOR", "marca": "peugeot", "pvp": 104717.47, "mayorista": 69113.53}, {"codigo": "5960E6", "descripcion": "BUJIA PRECALENTAMIENTO", "marca": "peugeot", "pvp": 8191.8, "mayorista": 5406.59}, {"codigo": "6460V0", "descripcion": "JUNTA", "marca": "peugeot", "pvp": 4304.3, "mayorista": 2840.84}, {"codigo": "6479A0", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 23120.24, "mayorista": 11560.12}, {"codigo": "6479A7", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 39645.68, "mayorista": 19822.85}, {"codigo": "9675916080", "descripcion": "CAJA SALIDA AGUA", "marca": "peugeot", "pvp": 357395.26, "mayorista": 235880.87}, {"codigo": "9808562780", "descripcion": "CORREA ALTERNADOR", "marca": "peugeot", "pvp": 73126.99, "mayorista": 48263.81}, {"codigo": "9811898780", "descripcion": "BIELETA", "marca": "peugeot", "pvp": 114740.34, "mayorista": 80318.24}, {"codigo": "9833351080", "descripcion": "FILTRO POLEN", "marca": "peugeot", "pvp": 80398.18, "mayorista": 48238.91}, {"codigo": "9847019780", "descripcion": "CAJA ELECT.ELECTROVENTIL", "marca": "peugeot", "pvp": 85563.34, "mayorista": 56471.8}, {"codigo": "103799", "descripcion": "15W40 API SN/CF_A3/B4 - 4 X 4L", "marca": "chevrolet", "pvp": 50165.74, "mayorista": 35116.02}, {"codigo": "13464219", "descripcion": "ESCOBILLA LIMPIAPARABRISAS TRA", "marca": "chevrolet", "pvp": 20247.9, "mayorista": 14173.53}, {"codigo": "19347337", "descripcion": "BUJIA", "marca": "chevrolet", "pvp": 2992.14, "mayorista": 2094.5}, {"codigo": "55490097", "descripcion": "BUJ\u00d1A ENCENDIDO", "marca": "chevrolet", "pvp": 53158.14, "mayorista": 37210.7}, {"codigo": "84390002", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "chevrolet", "pvp": 41794.1, "mayorista": 29255.88}, {"codigo": "030-121-016-A", "descripcion": "BOMBA", "marca": "volkswagen", "pvp": 124929.48, "mayorista": 93697.11}, {"codigo": "04E-109-119-C", "descripcion": "CORREA DEN", "marca": "volkswagen", "pvp": 177482.98, "mayorista": 133112.23}, {"codigo": "059-903-137-CC", "descripcion": "CORREA POL", "marca": "volkswagen", "pvp": 150303.66, "mayorista": 112727.75}, {"codigo": "06L-115-562-B", "descripcion": "ELEMENTO F", "marca": "volkswagen", "pvp": 57321.79, "mayorista": 42991.34}, {"codigo": "2H0-698-151-A", "descripcion": "JUEGO de PASTILLAS", "marca": "volkswagen", "pvp": 425673.04, "mayorista": 319254.78}, {"codigo": "PMR-018-903-K", "descripcion": "Cubrecarter", "marca": "volkswagen", "pvp": 166822.43, "mayorista": 125116.82}, {"codigo": "0831V4", "descripcion": "KIT CORREA DISTRIBUCION", "marca": "peugeot", "pvp": 298088.15, "mayorista": 196738.18}, {"codigo": "0831V6", "descripcion": "KIT CORREA DISTRIBUCION", "marca": "peugeot", "pvp": 336473.28, "mayorista": 222072.37}, {"codigo": "1444WN", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "peugeot", "pvp": 28316.15, "mayorista": 16989.69}, {"codigo": "1686479580", "descripcion": "BUJIA ENCENDIDO", "marca": "peugeot", "pvp": 64456.9, "mayorista": 42541.55}, {"codigo": "1906C0", "descripcion": "ELEMENTO FILTRO COMBUST.", "marca": "peugeot", "pvp": 30114.73, "mayorista": 15057.37}, {"codigo": "211766", "descripcion": "HORQUILLA EMBRAGUE", "marca": "peugeot", "pvp": 77431.29, "mayorista": 51104.65}, {"codigo": "214126", "descripcion": "TOPE", "marca": "peugeot", "pvp": 8362.64, "mayorista": 5519.34}, {"codigo": "2344F5", "descripcion": "JGO.ENGRANAJES", "marca": "peugeot", "pvp": 659710.84, "mayorista": 435409.16}, {"codigo": "238832", "descripcion": "SINCRONIZADOR 5TA.", "marca": "peugeot", "pvp": 444342.12, "mayorista": 293265.8}, {"codigo": "6447XG", "descripcion": "CJTO.FILTROS", "marca": "peugeot", "pvp": 39799.41, "mayorista": 19899.7}, {"codigo": "9181Q2", "descripcion": "LIMITADOR", "marca": "peugeot", "pvp": 138152.66, "mayorista": 91180.76}, {"codigo": "9726251", "descripcion": "ACEITE MOTOR 9000 4LTS", "marca": "peugeot", "pvp": 136784.51, "mayorista": 90277.77}, {"codigo": "LBRP006706", "descripcion": "PROTECTOR", "marca": "peugeot", "pvp": 116277.59, "mayorista": 76743.21}, {"codigo": "13583411", "descripcion": "SENSOR,AMB AIR TEMP", "marca": "chevrolet", "pvp": 27293.34, "mayorista": 19105.34}, {"codigo": "24591759", "descripcion": "FILTRO ACEITE", "marca": "chevrolet", "pvp": 346884.05, "mayorista": 242818.84}, {"codigo": "2641094", "descripcion": "BOMBAS DE AGUA MOD BA592", "marca": "chevrolet", "pvp": 58677.71, "mayorista": 41074.4}, {"codigo": "84677796", "descripcion": "CAJA DIRECC ELEC", "marca": "chevrolet", "pvp": 4652030.56, "mayorista": 3256421.39}, {"codigo": "88902619", "descripcion": "FILTRO ACEITE", "marca": "chevrolet", "pvp": 42476.23, "mayorista": 29733.36}, {"codigo": "94742919", "descripcion": "ELEMENTO FILTRO AIRE", "marca": "chevrolet", "pvp": 19936.5, "mayorista": 13955.55}, {"codigo": "94767736", "descripcion": "HORQUILLA EMBRAGUE", "marca": "chevrolet", "pvp": 108856.97, "mayorista": 76199.88}, {"codigo": "04C-129-620-D", "descripcion": "FILTRO AIR", "marca": "volkswagen", "pvp": 22615.37, "mayorista": 16961.53}, {"codigo": "059-903-341-AG", "descripcion": "RODILLO", "marca": "volkswagen", "pvp": 154254.54, "mayorista": 115690.91}, {"codigo": "5Q0-698-151-AH", "descripcion": "JUEGO de PASTILLAS", "marca": "volkswagen", "pvp": 257794.78, "mayorista": 193346.09}, {"codigo": "5Q0-819-669", "descripcion": "FILTRO DE OLOR", "marca": "volkswagen", "pvp": 98227.0, "mayorista": 73670.25}, {"codigo": "6QE-201-511-C", "descripcion": "FILTRO", "marca": "volkswagen", "pvp": 12899.96, "mayorista": 10319.97}];
+
+let currentBrand = 'all';
+let currentSearch = '';
+
+function fmt(n) {
+  return '$ ' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function brandLabel(m) {
+  if (m === 'peugeot') return 'Peugeot / Citroën';
+  if (m === 'chevrolet') return 'Chevrolet';
+  if (m === 'volkswagen') return 'Volkswagen';
+  return m;
+}
+
+function getFiltered() {
+  const q = currentSearch.trim().toLowerCase();
+  return PRODUCTOS.filter(p => {
+    const brandOk = currentBrand === 'all' || p.marca === currentBrand;
+    const searchOk = !q || p.codigo.toLowerCase().includes(q) || p.descripcion.toLowerCase().includes(q);
+    return brandOk && searchOk;
+  });
+}
+
+function renderTable() {
+  const data = getFiltered();
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  const table = document.getElementById('mainTable');
+
+  document.getElementById('countVisible').textContent = data.length;
+
+  if (data.length === 0) {
+    tbody.innerHTML = '';
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  table.style.display = '';
+  empty.style.display = 'none';
+
+  tbody.innerHTML = data.map(p => `
+    <tr>
+      <td class="td-code">${p.codigo}</td>
+      <td class="td-desc">${p.descripcion}</td>
+      <td class="td-brand"><span class="badge badge-${p.marca}">${brandLabel(p.marca)}</span></td>
+      <td class="td-pvp">${fmt(p.pvp)}</td>
+      <td class="td-may">${fmt(p.mayorista)}</td>
+    </tr>
+  `).join('');
+}
+
+function selectBrand(b) {
+  currentBrand = b;
+  document.querySelectorAll('.brand-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.brand === b);
+  });
+  renderTable();
+}
+
+function applyFilters() {
+  currentSearch = document.getElementById('searchInput').value;
+  renderTable();
+}
+
+function exportPDF() {
+  window.print();
+}
+
+function exportXLS() {
+  const data = getFiltered();
+  if (!data.length) { alert('No hay datos para exportar con los filtros actuales.'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  const rows = [
+    ['LISTA DE PRECIOS MAYORISTA'],
+    ['PRECIOS NO INCLUYEN IVA'],
+    [],
+    ['CODIGO', 'DESCRIPCION', 'MARCA', 'PVP', 'PRECIO MAYORISTA']
+  ];
+
+  data.forEach(p => {
+    rows.push([p.codigo, p.descripcion, brandLabel(p.marca), p.pvp, p.mayorista]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = [
+    { wch: 26 }, { wch: 42 }, { wch: 20 }, { wch: 16 }, { wch: 18 }
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Lista Precios');
+
+  const brandName = currentBrand === 'all' ? 'Todas' : brandLabel(currentBrand).replace(' / ', '_');
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `ListaPrecios_${brandName}_${fecha}.xlsx`);
+}
+
+// Init
+renderTable();
+</script>
+</body>
+</html>
